@@ -13,7 +13,6 @@ const char* bridown[] = {"bri", "down", 0};
 const char* voldown[] = {"amixer", "-c" "1", "set", "Master", "5%-",         0};
 const char* volup[]   = {"amixer", "-c" "1", "set", "Master", "5%+",         0};
 const char* volmute[] = {"amixer", "-c" "1", "set", "Master", "toggle",      0};
-const char* lock[]  = {"/home/alyssa/.config/bin/lock", 0};
 
 static struct key keys[] = {
     {MOD,      XK_w,   win_kill,   {0}},
