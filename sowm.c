@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "sowm.h"
 
@@ -123,17 +124,7 @@ void win_del(Window w) {
 }
 
 void win_kill(const Arg arg) {
-    if (!cur) return;
-
-    XEvent ev = { .type = ClientMessage };
-
-    ev.xclient.window       = cur->w;
-    ev.xclient.format       = 32;
-    ev.xclient.message_type = XInternAtom(d, "WM_PROTOCOLS", True);
-    ev.xclient.data.l[0]    = XInternAtom(d, "WM_DELETE_WINDOW", True);
-    ev.xclient.data.l[1]    = CurrentTime;
-
-    XSendEvent(d, cur->w, False, NoEventMask, &ev);
+    if (cur) XKillClient(d, cur->w);
 }
 
 void win_center(const Arg arg) {
@@ -148,8 +139,7 @@ void win_fs(const Arg arg) {
 
     if ((cur->f = cur->f ? 0 : 1)) {
         win_size(cur->w, &cur->wx, &cur->wy, &cur->ww, &cur->wh);
-        XMoveResizeWindow(d, cur->w, 0, 0, sw, sh);
-
+        XMoveResizeWindow(d, cur->w, 0, GAP_SIZE, sw, sh - GAP_SIZE);
     } else {
         XMoveResizeWindow(d, cur->w, cur->wx, cur->wy, cur->ww, cur->wh);
     }
@@ -198,7 +188,17 @@ void ws_go(const Arg arg) {
 
     ws_sel(tmp);
 
-    for win XUnmapWindow(d, c->w);
+    for win {
+		char* winame = NULL;
+		if (!XFetchName(d, c->w, &winame) || winame == NULL) {
+			XUnmapWindow(d, c->w);
+		} else {
+			if (strncmp(winame, barname, strlen(barname))) {
+				XUnmapWindow(d, c->w);
+			}
+			XFree(winame);
+		}
+    }
 
     ws_sel(arg.i);
 
@@ -289,7 +289,7 @@ int main(void) {
     root  = RootWindow(d, s);
     sw    = XDisplayWidth(d, s);
     sh    = XDisplayHeight(d, s);
-
+         
     XSelectInput(d,  root, SubstructureRedirectMask);
     XDefineCursor(d, root, XCreateFontCursor(d, 68));
     input_grab(root);
